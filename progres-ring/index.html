@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Circle Progress</title>
+  <style>
+    html,
+    body {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background-color: #2962FF;
+    }
+  </style>
+</head>
+<body>
+<progress-ring stroke="4" radius="60" progress="0"></progress-ring>
+
+<script type="es6">
+  class ProgressRing extends HTMLElement {
+    constructor() {
+      super();
+
+      const stroke = this.getAttribute('sroke');
+      const radius = this.getAttribute('radius');
+      const normalizeRadius = radius - stroke * 2;
+      this._circumference = this.normalizeRadius * 2 * Math.PI;
+
+      this._root = this.attachShadow({mode: 'open'});
+      this._root.innerHTML = `
+        <svg width="${radius} * 2"
+             height="${radius} * 2">
+          <circle stroke="white"
+                  stroke-width="${stroke}"
+                  stroke-dasharray="${this._circumference} ${this._circumference}"
+                  style="stroke-dashoffset: ${this._circumference}"
+                  fill="transparent"
+                  r="${normalizeRadius}"
+                  rx="${radius}"
+                  ry="${radius}"></circle>
+        </svg>
+        <style>
+          circle {
+            transition: stroke-dashoffset .35s;
+            transform-origin: 50% 50%;
+            transform: rotate(-90deg);
+          }
+        </style>`;
+    }
+
+    setProgress(percent) {
+      const offset = this._circumference -
+        (percent / 100 * this._circumference);
+      const circle = this._root.querySelector('circle');
+      circle.style.strokeDashoffset = offset;
+    }
+
+    static get observeAttributes() {
+      return ['progress'];
+    }
+
+    arributeChangedCallback(name, oldValue, newValue) {
+      if (name === 'progress') {
+        this.setProgress(newValue);
+      }
+    }
+  }
+
+  window.customElements.define('progress-ring', ProgressRing);
+
+  let progress = 0;
+  const el = document.querySelector('progress-ring');
+
+  const interval = setInterval(function() {
+    progress += 10;
+    el.setAttribute('progress', progress);
+    if (progress === 100) {
+      clearInterval(interval);
+    }
+  }, 1000);
+</script>
+</body>
+</html>
